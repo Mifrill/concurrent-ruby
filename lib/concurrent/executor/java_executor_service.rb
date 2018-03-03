@@ -10,6 +10,7 @@ if Concurrent.on_jruby?
     # @!visibility private
     class JavaExecutorService < AbstractExecutorService
       java_import 'java.lang.Runnable'
+      include Concern::Logging
 
       FALLBACK_POLICY_CLASSES = {
         abort:       java.util.concurrent.ThreadPoolExecutor::AbortPolicy,
@@ -26,6 +27,7 @@ if Concurrent.on_jruby?
       def post(*args, &task)
         raise ArgumentError.new('no block given') unless block_given?
         return handle_fallback(*args, &task) unless running?
+        log DEBUG, 'java-executor', args: args, task: task#, caller: caller
         @executor.submit_runnable Job.new(args, task)
         true
       rescue Java::JavaUtilConcurrent::RejectedExecutionException
